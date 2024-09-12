@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Deploy FastAPI App
 
 on:
   push:
@@ -8,15 +8,14 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.x'
+          python-version: '3.9'
 
       - name: Install dependencies
         run: |
@@ -24,12 +23,12 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest
+          # Add commands to run your tests here
+          echo "No tests defined"
 
-      - name: Build and Deploy
-        env:
-          API_KEY: ${{ secrets.YOUR_SECRET_API_KEY }}
-        run: |
-          # Replace with your deployment commands
-          railway up
-
+      - name: Deploy to Render
+        uses: render-examples/render-deploy@v1
+        with:
+          render_token: ${{ secrets.RENDER_TOKEN }}
+          service_name: your-service-name
+          branch: main
