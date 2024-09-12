@@ -1,4 +1,4 @@
-name: Deploy FastAPI App
+name: Deploy to EC2
 
 on:
   push:
@@ -6,29 +6,24 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.5.3
+      with:
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Run tests
-        run: |
-          # Add commands to run your tests here
-          echo "No tests defined"
-
-      - name: Deploy to Render
-        uses: render-examples/render-deploy@v1
-        with:
-          render_token: ${{ secrets.RENDER_TOKEN }}
-          service_name: your-service-name
-          branch: main
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@<your-ec2-instance-public-ip> << 'EOF'
+          cd /path/to/your-repo
+          git pull
+          pip3 install -r requirements.txt
+          pkill -f uvicorn || true
+          nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+        EOF
