@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to AWS EC2
 
 on:
   push:
@@ -13,17 +13,26 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up SSH
-      uses: webfactory/ssh-agent@v0.5.3
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
-        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+        python-version: '3.8'
 
-    - name: Deploy to EC2
+    - name: Install dependencies
       run: |
-        ssh -o StrictHostKeyChecking=no ubuntu@<your-ec2-instance-public-ip> << 'EOF'
+        pip install -r requirements.txt
+
+    - name: SSH to EC2 and deploy
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USER: ${{ secrets.EC2_USER }}
+        EC2_KEY: ${{ secrets.EC2_KEY }}
+      run: |
+        echo "${EC2_KEY}" > key.pem
+        chmod 400 key.pem
+        ssh -o StrictHostKeyChecking=no -i key.pem ${EC2_USER}@${EC2_HOST} << 'EOF'
           cd /path/to/your-repo
-          git pull
+          git pull origin main
           pip3 install -r requirements.txt
-          pkill -f uvicorn || true
-          nohup uvicorn main:app --host 0.0.0.0 --port 8000 &
+          sudo systemctl restart your-fastapi-service
         EOF
